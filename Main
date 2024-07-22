@@ -1,0 +1,32 @@
+import numpy as np
+import nibabel as nib
+from scipy.ndimage import binary_erosion
+
+def extract_outer_voxels(image_path, output_path):
+    # Load the MRI image
+    img = nib.load(image_path)
+    data = img.get_fdata()
+
+    # Create a binary mask of the non-zero voxels
+    binary_mask = data > 0
+
+    # Erode the binary mask to find the inner voxels
+    eroded_mask = binary_erosion(binary_mask)
+
+    # The outer voxels are the ones in the original mask but not in the eroded mask
+    outer_voxels = binary_mask & ~eroded_mask
+
+    # Create a new data array with outer voxels set to 1 and others to 0
+    new_data = np.zeros_like(data)
+    new_data[outer_voxels] = 1
+
+    # Save the new data as a NIfTI image
+    new_img = nib.Nifti1Image(new_data, img.affine, img.header)
+    nib.save(new_img, output_path)
+    print(f"Outer voxels image saved to {output_path}")
+
+# Example usage
+image_path = '/MNI_bet.nii.gz'
+output_path = '/MNI_gm_outer_voxels.nii.gz'
+extract_outer_voxels(image_path, output_path)
+
